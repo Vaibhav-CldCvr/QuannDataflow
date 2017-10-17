@@ -17,5 +17,3 @@ Run the project in command line :
                   --output=gs://<your-gcs-bucket>/output" \
      -Pdataflow-runner"
   
-  
-
