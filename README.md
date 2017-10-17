@@ -11,11 +11,11 @@ Run the project in Eclipse :
 Run the project in command line :
 
   1.  cd to the project directory.
-  2.  mvn compile exec:java -Dexec.mainClass=<path to the main java file location> \
+  2.  "mvn compile exec:java -Dexec.mainClass=<path to the main java file location> \
      -Dexec.args="--runner=DataflowRunner --project=<your-gcp-project> \
                   --gcpTempLocation=gs://<your-gcs-bucket>/tmp \
                   --output=gs://<your-gcs-bucket>/output" \
-     -Pdataflow-runner
+     -Pdataflow-runner"
   
   
 
