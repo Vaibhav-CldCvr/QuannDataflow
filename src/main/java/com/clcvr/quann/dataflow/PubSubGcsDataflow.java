@@ -1,6 +1,10 @@
 package com.clcvr.quann.dataflow;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.Default;
@@ -9,13 +13,18 @@ import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.Validation.Required;
 import org.joda.time.Duration;
+
+
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO;
+import org.apache.beam.sdk.io.gcp.pubsub.PubsubMessage;
+import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.ParDo;
+
 import org.apache.beam.sdk.transforms.windowing.FixedWindows;	
 import org.apache.beam.sdk.transforms.windowing.Window;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 /**
  * @author cloudcover-vaibhav
@@ -23,8 +32,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PubSubGcsDataflow {
     
-	private static final Logger LOG = LoggerFactory.getLogger(PubSubGcsDataflow.class);
-	static final int WINDOW_SIZE = 1;
+	static final int WINDOW_SIZE = 5;
 
 	/**
 	 * Options supported by {@link PubSubGcsDataflow}.
@@ -42,7 +50,7 @@ public class PubSubGcsDataflow {
 		 */
 		@Description("Path of the file to write to")
 		@Required
-		@Default.String("gs://log-agg/output")
+		@Default.String("gs://log-agg/output/")
 		String getOutput();
 		void setOutput(String value);
 
@@ -54,6 +62,53 @@ public class PubSubGcsDataflow {
 	}
 
 	/**
+	 * @param bytes
+	 * @throws IOException 
+	 */
+	public static String decompress(byte[] bytes) throws IOException {
+		
+		String outStr = "";
+		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+		try {
+			GZIPInputStream gzis = new GZIPInputStream(bais);
+			InputStreamReader reader = new InputStreamReader(gzis);
+			BufferedReader in = new BufferedReader(reader);
+			String readed;		
+			while ((readed = in.readLine()) != null) {
+			    System.out.println(readed);
+			    outStr += readed;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return outStr;
+		
+	}
+
+	static class LogsFn extends DoFn<PubsubMessage, String> {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		@ProcessElement
+		public void processElement(ProcessContext c) {
+			// Get the input element from ProcessContext.
+			PubsubMessage message = c.element();
+			// Use ProcessContext.output to emit the output element.
+			String part = "";
+			try {
+				part = PubSubGcsDataflow.decompress(message.getPayload());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			c.output(part);
+		}
+	}
+
+
+	/**
 	 * @param args
 	 * @throws IOException 
 	 */
@@ -62,28 +117,30 @@ public class PubSubGcsDataflow {
 		Options options = PipelineOptionsFactory.fromArgs(args).withValidation().as(Options.class);
 		Pipeline pipeline = Pipeline.create(options);
 
-
 		/**
 		 * Read logs coming from Cloud Pub Sub 
 		 */
-		pipeline.apply("Read From Pubsub",PubsubIO.readStrings().fromTopic("projects/cloudcover-sandbox/topics/inputTopic"))
-		
+		pipeline.apply("Read Logs Pubsub",PubsubIO.readMessages().fromTopic("projects/cloudcover-sandbox/topics/newTopic"))
+		/**
+		 * Decompress Logs  
+		 */
+		.apply("Decompressing Logs",ParDo.of(new LogsFn()))
 		/**
 		 * Window into fixed windows. The fixed window size for this example defaults to 1
 		 * minute.
 		 */
-		.apply(Window.into(FixedWindows.of(Duration.standardMinutes(options.getWindowSize()))))
-		
+		.apply("Applying Window",Window.into(FixedWindows.of(Duration.standardMinutes(options.getWindowSize()))))
+
 		/**
 		 * Write log files to Google Cloud Storage bucket
 		 */		
-		.apply("Write to Bucket",TextIO.write().to(options.getOutput()).
-				withWindowedWrites().withNumShards(10));
-		
-		
+		.apply("Write Logs GCS",TextIO.write().to(options.getOutput()).
+		     withWindowedWrites().withNumShards(1));
+
 		pipeline.run();	
 
 
 	}
+
 
 }
