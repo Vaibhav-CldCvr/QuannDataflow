@@ -12,6 +12,7 @@ import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.Validation.Required;
+import org.apache.beam.sdk.repackaged.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,13 +76,15 @@ public class PubSubGcsDataflow {
 		String outStr = "";
 		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 		try {
-			GZIPInputStream gzis = new GZIPInputStream(bais);
-			InputStreamReader reader = new InputStreamReader(gzis);
+			
+			BZip2CompressorInputStream bzis = new BZip2CompressorInputStream(bais);
+			InputStreamReader reader = new InputStreamReader(bzis);
 			BufferedReader in = new BufferedReader(reader);
 			String readed;		
 			while ((readed = in.readLine()) != null) {
 				LOG.info("Found Compressed Logs " + readed);
 			    outStr += readed;
+			    System.out.println("outStr"+outStr);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
