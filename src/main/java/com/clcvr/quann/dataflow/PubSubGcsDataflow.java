@@ -133,7 +133,7 @@ public class PubSubGcsDataflow {
 		 */
 		.apply("Decompressing Logs",ParDo.of(new LogsFn()))
 		/**
-		 * Window into fixed windows. The fixed window size for this example defaults to 1
+		 * Window into fixed windows. The fixed window size is 5
 		 * minute.
 		 */
 		.apply("Applying Window",Window.into(FixedWindows.of(Duration.standardMinutes(options.getWindowSize()))))
