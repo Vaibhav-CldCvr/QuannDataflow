@@ -13,8 +13,8 @@ import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.Validation.Required;
 import org.joda.time.Duration;
-
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubMessage;
@@ -33,6 +33,7 @@ import org.apache.beam.sdk.transforms.windowing.Window;
 public class PubSubGcsDataflow {
     
 	static final int WINDOW_SIZE = 5;
+	private static final Logger LOG = LoggerFactory.getLogger(PubSubGcsDataflow.class);
 
 	/**
 	 * Options supported by {@link PubSubGcsDataflow}.
@@ -66,7 +67,7 @@ public class PubSubGcsDataflow {
 	 * @throws IOException 
 	 */
 	public static String decompress(byte[] bytes) throws IOException {
-		
+		LOG.info("Found UnCompressed PubSub Logs " + bytes);
 		String outStr = "";
 		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 		try {
@@ -75,7 +76,7 @@ public class PubSubGcsDataflow {
 			BufferedReader in = new BufferedReader(reader);
 			String readed;		
 			while ((readed = in.readLine()) != null) {
-			    System.out.println(readed);
+				LOG.info("Found Compressed Logs " + readed);
 			    outStr += readed;
 			}
 		} catch (IOException e) {
@@ -94,6 +95,7 @@ public class PubSubGcsDataflow {
 
 		@ProcessElement
 		public void processElement(ProcessContext c) {
+			LOG.info("Found context " + c);
 			// Get the input element from ProcessContext.
 			PubsubMessage message = c.element();
 			// Use ProcessContext.output to emit the output element.
@@ -112,7 +114,7 @@ public class PubSubGcsDataflow {
 	 * @param args
 	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException , Exception{
 
 		Options options = PipelineOptionsFactory.fromArgs(args).withValidation().as(Options.class);
 		Pipeline pipeline = Pipeline.create(options);
