@@ -67,6 +67,10 @@ public class PubSubGcsDataflow {
 	 * @throws IOException 
 	 */
 	public static String decompress(byte[] bytes) throws IOException {
+		/**
+		 * This method is used to Decompress input PubSub Logs 
+		 * to Human Readable format.
+		 */
 		LOG.info("Found UnCompressed PubSub Logs " + bytes);
 		String outStr = "";
 		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
@@ -89,7 +93,8 @@ public class PubSubGcsDataflow {
 
 	static class LogsFn extends DoFn<PubsubMessage, String> {
 		/**
-		 * 
+		 * This is DoFn function that process one element
+		 * at a time from input PCollection
 		 */
 		private static final long serialVersionUID = 1L;
 
