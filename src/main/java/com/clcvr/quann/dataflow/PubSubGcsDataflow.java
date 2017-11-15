@@ -74,7 +74,7 @@ public class PubSubGcsDataflow {
 		
 		@Description("Read PubSub Topic")
 		@Required
-		@Default.String("projects/project-lms-182110/subscriptions/apache-nifi")
+		@Default.String("projects/project-lms-182110/subscriptions/apache-nifi-palo")
 		String getReadSubscriptionName();
 		void setReadSubscriptionName(String value);
 		
@@ -168,10 +168,10 @@ public class PubSubGcsDataflow {
 			// Get the input element from ProcessContext.
 			PubsubMessage message = c.element();
 			// Use ProcessContext.output to emit the output element.
-			System.out.println("Without Conversion"+message);
+		
 			String part = "";
 			part = new String(message.getPayload());
-			System.out.println("After Conversion"+part);
+	
 			c.output(part);
 		}
 	}
