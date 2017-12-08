@@ -21,6 +21,10 @@ public class NetFlowV5ParserTest {
 		byte[] b = toBinary(hexPayload);
 		
 		NetFlowV5Packet packet = NetFlowV5Parser.parsePacket(b);
+		
+		System.out.println("Header"+packet.getHeader());
+		System.out.println("Records"+packet.getRecords());
+		
 		try {
 			writeToCSV(packet.getRecords(),packet.getHeader());
 		} catch (FileNotFoundException e) {
@@ -136,6 +140,6 @@ public class NetFlowV5ParserTest {
 			oneLine.append(CSV_SEPARATOR);
 			oneLine.append(SEPERATOR);
 		    }
-		System.out.println(oneLine.toString());
+		
 	}
 }
